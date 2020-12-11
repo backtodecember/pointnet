@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 class transformationNet(nn.Module):
     def __init__(self,input_d = 3):
+        super(transformationNet, self).__init__()
         self.input_d = input_d
         self.block1 = nn.Sequential(
             nn.Conv1d(self.input_d,64,1),
@@ -28,7 +29,7 @@ class transformationNet(nn.Module):
             nn.ReLU())
         self.block6 = nn.Sequential(
             nn.Linear(256, self.input_d**2))
-
+        
 
 
     def forward(self,x):
@@ -48,7 +49,8 @@ class transformationNet(nn.Module):
         x = self.block2(x) #Bx128xN
         x = self.block3(x) #Bx1024xN
         batch_size,a,N_pts = x.shape
-        x = nn.MaxPool1d(N_pts,stride = 1).view(batch_size,a)#Bx1024 
+        pool = nn.MaxPool1d(N_pts,stride = 1)
+        x = pool(x).view(batch_size,a)#Bx1024 
         x = self.block4(x) #Bx512
         x = self.block5(x) #Bx256
         x = self.block6(x) #Bx input_d**2 (row major of matrix)
@@ -60,6 +62,7 @@ class transformationNet(nn.Module):
 
 class PointNetClassification(nn.Module):
     def __init__(self,N_classes):
+        super(PointNetClassification, self).__init__()
         self.transform1 = transformationNet(3)
         self.block1 = nn.Sequential(
             nn.Conv1d(3,64,1),
@@ -104,18 +107,20 @@ class PointNetClassification(nn.Module):
         _,N_pts,_ = x.shape
         transform = self.transform1(x) #B*3*3
         x = torch.bmm(x,transform) #BxNx3
-        x.transpose(2,1) #Bx3xN
+        x = x.transpose(2,1) #Bx3xN
         x = self.block1(x) #Bx64xN
+        
         x = self.block2(x) #Bx64xN
-        x.transpose(2,1) #BxNx64
+        x = x.transpose(2,1) #BxNx64
         transform = self.transform2(x) #B*64*64
         x = torch.bmm(x,transform) #BxNx64
-        x.transpose(2,1) #Bx64xN
+        x = x.transpose(2,1) #Bx64xN
         x = self.block3(x) #Bx64xN
         x = self.block4(x) #Bx128xN
         x = self.block5(x) #Bx1024xN
         batch_size,a,N_pts = x.shape
-        x = nn.MaxPool1d(N_pts,stride = 1).view(batch_size,a)#Bx1024 
+        pool = nn.MaxPool1d(N_pts,stride = 1)
+        x = pool(x).view(batch_size,a)#Bx1024
         x = self.block6(x) #Bx512 
         x = self.block7(x) #Bx256
         x = self.block8(x) #BxN_classes
