@@ -3,6 +3,7 @@ import os
 import trimesh
 import numpy as np
 import pickle
+import json
 
 class ModelNet40Dataset():
     def __init__(self,data_path):
@@ -66,6 +67,21 @@ class ShapeNetDataset():
         self.train = {}
         self.test = {}
 
+    def get_N_parts(self,class_ID):
+        split_path = self.data_path + 'train_test_split/' + 'shuffled_train_file_list.json'
+        split_file = json.load(open(split_path, 'r'))
+        object_ID = utils.ShapeNet_folderID[class_ID]
+        for i in range(len(split_file)):
+            fn = split_file[i].split('/')
+            if fn[1] == object_ID:
+                label_path = self.data_path + object_ID + '/points_label/' + fn[2] +'.seg'  
+                label = []
+                with open(label_path, 'r') as f:
+                    for line in f:
+                        ls = int(line)
+                        label.append(ls - 1) #original labels are not zero based
+                return max(label) + 1
+        
     def get_data(self,data_type,batch_size):
         pcds = []
         labels = []
@@ -144,6 +160,6 @@ if __name__ == "__main__":
 #     ModelNet40Data = pickle.load(filehandler)
 
 
-#     ###ShapeNet #####
-#     dataset = ShapeNetDataset('datasets/ShapeNet/',6)
-#     pcds,labels,fns = dataset.get_all_data('test')
+    ###ShapeNet #####
+    dataset = ShapeNetDataset('datasets/ShapeNet/',6)
+    pcds,labels,fns = dataset.get_all_data('test')

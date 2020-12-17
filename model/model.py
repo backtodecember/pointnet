@@ -50,8 +50,9 @@ class transformationNet(nn.Module):
         x = self.block3(x) #Bx1024xN
         batch_size,a,N_pts = x.shape
 #         pool = nn.MaxPool1d(N_pts,stride = 1)
-#         x = pool(x).view(batch_size,a)#Bx1024 
-        x = torch.max(x,dim=2).values
+#         x = pool(x).view(batch_size,a)#Bx1024
+        
+        x = torch.max(x,dim=2).values#Bx1024 
         x = self.block4(x) #Bx512
         x = self.block5(x) #Bx256
         x = self.block6(x) #Bx input_d**2 (row major of matrix)
@@ -89,12 +90,10 @@ class PointNetClassification(nn.Module):
             nn.ReLU())
         self.block6 = nn.Sequential(
             nn.Linear(1024,512),
-            nn.Dropout(0.7),
             nn.BatchNorm1d(512),
             nn.ReLU())
         self.block7 = nn.Sequential(
             nn.Linear(512,256),
-            nn.Dropout(0.7),
             nn.BatchNorm1d(256),
             nn.ReLU())
         self.block8 = nn.Sequential(
